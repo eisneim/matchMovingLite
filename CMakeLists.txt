@@ -9,5 +9,5 @@ PROJECT( matchMovingLite )
 # source to include
 include_directories(.)
 FIND_PACKAGE( OpenCV REQUIRED )
-ADD_EXECUTABLE( matchMove main.cpp )
-TARGET_LINK_LIBRARIES( main ${OpenCV_LIBS} )
+ADD_EXECUTABLE( mm main.cpp )
+TARGET_LINK_LIBRARIES( mm ${OpenCV_LIBS} )

@@ -12,4 +12,6 @@ lib-cov
 cmake_install.cmake
 CMakeCache.txt
 CMakeFiles/
+mm
+Makefile
 
