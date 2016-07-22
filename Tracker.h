@@ -11,15 +11,13 @@ class Tracker {
 protected:
   Ptr<Feature2D> detector;
   Ptr<DescriptorMatcher> matcher;
-  vector< vector<DMatch> > allGoodMatches;
   vector< vector<KeyPoint> > allGoodKeypoints;
+  // vector< vector<DMatch> > allGoodMatches;
   // vector< vector<Mat>> allHomography;
 
   Mat prevFrame;
   Mat prevDescriptors;
   vector<KeyPoint> prevKeypoints;
-
-  bool isFirstFrame = true;
   // ======== those value will be updated for each frame ====
   int currentMatchCount;
   int currentKeypointCount;

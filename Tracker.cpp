@@ -65,13 +65,15 @@ Mat Tracker::process(Mat frame, int index) {
   Mat descriptors;
 
   detector -> detectAndCompute(frame, noArray(), points, descriptors);
-  currentKeypointCount = points.size();
 
-  if (isFirstFrame) {
+  if (index == 0) {
+    prevKeypoints = points;
     prevFrame = frame;
     prevDescriptors = descriptors;
-    prevKeypoints = points;
-    isFirstFrame = false;
+    // this might be unnecessary
+    vector<KeyPoint> emptyVect;
+    allGoodKeypoints.push_back(emptyVect);
+    return frame;
   }
 
   vector< vector<DMatch> > matches;
@@ -84,27 +86,36 @@ Mat Tracker::process(Mat frame, int index) {
     if (matches[ii][0].distance < NN_MATCH_RATIO * matches[ii][1].distance) {
       matched1.push_back(prevKeypoints[ matches[ii][0].queryIdx ]);
       matched2.push_back(    points[ matches[ii][0].trainIdx ]);
-      allGoodMatches[index] = matches[ii];
-      allGoodKeypoints[index] = matched2;
     }
   }
-  // update state
-  currentMatchCount = (int)matched1.size();
-  currentRatio = currentMatchCount * 1.0 / currentKeypointCount;
+
+  allGoodKeypoints.push_back(matched2);
 
   // draw matches and stats
   Mat distFrame = frame.clone();
+  // some stats;
+  stringstream strPoints, strMatches, strRatio;
+  strPoints << "Points: " << currentKeypointCount;
+  strMatches << "Matches: " << currentMatchCount;
+  strRatio << "Ratio: " << currentRatio;
+
   bool shouldUpdateStat = (index % STAT_UPDTATE_PERIOD == 0);
   if (shouldUpdateStat) {
-    stringstream strPoints, strMatches, strRatio;
-    strPoints << "Points: " << currentKeypointCount;
-    strMatches << "Matches: " << currentMatchCount;
-    strRatio << "Ratio: " << currentRatio;
-    // putText(dist, text, org, fontFace, scale, color, thickness, lineType, buttomLeftOrigin)
-    putText(distFrame, strPoints.str(), Point(0, distFrame.rows - 90), FONT_HERSHEY_COMPLEX, 2, Scalar::all(255), 1);
-    putText(distFrame, strMatches.str(), Point(0, distFrame.rows - 60), FONT_HERSHEY_COMPLEX, 2, Scalar::all(255), 1);
-    putText(distFrame, strRatio.str(), Point(0, distFrame.rows - 30), FONT_HERSHEY_COMPLEX, 2, Scalar::all(255), 1);
+    currentKeypointCount = points.size();
+    currentMatchCount = (int)matched1.size();
+    currentRatio = currentMatchCount * 1.0 / currentKeypointCount;
+
+    cout << strPoints.str() << endl
+         << strMatches.str() << endl
+         << strRatio.str() << endl
+         << "===================" << endl;
   }
+
+  // putText(dist, text, org, fontFace, scale, color, thickness, lineType, buttomLeftOrigin)
+  putText(distFrame, strPoints.str(), Point(0, distFrame.rows - 90), FONT_HERSHEY_COMPLEX, 1, Scalar::all(255), 1);
+  putText(distFrame, strMatches.str(), Point(0, distFrame.rows - 50), FONT_HERSHEY_COMPLEX, 1, Scalar::all(255), 1);
+  putText(distFrame, strRatio.str(), Point(0, distFrame.rows - 10), FONT_HERSHEY_COMPLEX, 1, Scalar::all(255), 1);
+
 
   drawKeypoint(distFrame, matched2);
 
@@ -119,9 +130,8 @@ void Tracker::drawKeypoint(Mat frame, vector<KeyPoint> keypoints) {
   // drawMarker(img,Point position, color, markerType, size, thickness, lineType)
   for(unsigned ii = 0; ii < keypoints.size(); ii++) {
     KeyPoint point = keypoints[ii];
-   cout << "one key point: " << point.pt << endl;
-    Scalar color(255, 0, 0);
-    drawMarker(frame, point.pt, color, MARKER_CROSS, 20, 1);
+    Scalar color(0, 255, 0);
+    drawMarker(frame, point.pt, color, MARKER_TILTED_CROSS, 10, 1);
   }
 }
 

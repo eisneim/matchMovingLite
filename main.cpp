@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 
     imshow(WIN_PREVIEW, parsedFrame);
     // outputVideo << parsedFrame;
-    waitKey(5);
+     // userKey = waitKey(5);
   }
 
 
