@@ -11,13 +11,29 @@ class Tracker {
 protected:
   Ptr<Feature2D> detector;
   Ptr<DescriptorMatcher> matcher;
-  vector< vector<KeyPoint> >goodKeyPoints;
-  vector< vector<DMatch> > goodMatches;
+  vector< vector<DMatch> > allGoodMatches;
+  vector< vector<KeyPoint> > allGoodKeypoints;
+  // vector< vector<Mat>> allHomography;
 
+  Mat prevFrame;
+  Mat prevDescriptors;
+  vector<KeyPoint> prevKeypoints;
+
+  bool isFirstFrame = true;
+  // ======== those value will be updated for each frame ====
+  int currentMatchCount;
+  int currentKeypointCount;
+  double currentRatio;
+  // int currentInliers;
+  // ========================================================
 public:
   Tracker(string _detector = "AKAZE", string _matcher = "BruteForce-Hamming");
   ~Tracker();
+
   Mat process(Mat, int);
+
+  void drawKeypoint(Mat, vector<KeyPoint>);
+
   Ptr<Feature2D> getDetector() const { return detector; };
 };
 

@@ -75,7 +75,13 @@ int main(int argc, char* argv[]) {
   int frameCount = sourceVideo.get(CAP_PROP_FRAME_COUNT);
   for (int ii = 0; ii < frameCount; ii++) {
     sourceVideo >> frame;
-    tracker.process(frame, ii);
+    // **** ------------ ***
+    Mat parsedFrame = tracker.process(frame, ii);
+    // **** ------------ ***
+
+    imshow(WIN_PREVIEW, parsedFrame);
+    // outputVideo << parsedFrame;
+    waitKey(5);
   }
 
 
