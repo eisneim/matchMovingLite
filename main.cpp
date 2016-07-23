@@ -4,7 +4,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/videoio.hpp> // video write
 
-#include "Tracker.h"
+#include "src/Tracker.h"
 
 // #include "lib/rpp/RPP.h"
 
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 
     imshow(WIN_PREVIEW, parsedFrame);
     // outputVideo << parsedFrame;
-     // userKey = waitKey(5);
+    waitKey(5);
   }
 
 

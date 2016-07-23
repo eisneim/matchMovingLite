@@ -12,6 +12,7 @@ lib-cov
 cmake_install.cmake
 CMakeCache.txt
 CMakeFiles/
+build/
 mm
 Makefile
 
