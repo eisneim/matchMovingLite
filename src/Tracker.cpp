@@ -5,6 +5,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/features2d.hpp>
+#include <opencv2/calib3d.hpp>
 #include <math.h> // for sqrt, pow
 
 using namespace std;
@@ -23,7 +24,8 @@ static const double RANSAC_THRESH = 2.5f;
 static const double NN_MATCH_RATIO = 0.8f;
 // update calc statistics everty 10 frames
 static const int STAT_UPDTATE_PERIOD = 10;
-
+static const Scalar MarkerColor(255, 169, 135);
+static const Scalar TailColor(0, 255, 0);
 
 Tracker::Tracker(string _detector, string _matcher) :
   currentMatchCount(0), currentRatio(0), currentKeypointCount(0)
@@ -81,6 +83,7 @@ Mat Tracker::process(Mat frame, int index) {
 
   vector< vector<DMatch> > matches;
   vector<KeyPoint> matched1, matched2;
+  vector<Point2f> matchedPoint1, matchedPoint2;
   // DescriptorMatcher::knnMatch(queryDescriptors, trainDescriptors, distMatches, K)
   // K: Count of best matches found per each query descriptor or less if a query descriptor has less than k possible matches in total.
   matcher -> knnMatch(prevDescriptors, descriptors, matches, 2);
@@ -91,23 +94,33 @@ Mat Tracker::process(Mat frame, int index) {
       KeyPoint pt2 = points[ matches[ii][0].trainIdx ];
       matched1.push_back(pt1);
       matched2.push_back(pt2);
+      matchedPoint1.push_back(pt1.pt);
+      matchedPoint2.push_back(pt2.pt);
 
       //-- draw out a marker for matched point
-      Scalar markerColor(0, 255, 0);
-      drawMarker(distFrame, pt2.pt, markerColor, MARKER_TILTED_CROSS, 10, 1);
+      drawMarker(distFrame, pt2.pt, MarkerColor, MARKER_TILTED_CROSS, 10, 1);
       drawTail(distFrame, pt1, pt2);
     }
   }
+  // get the fundamental matrix and then we can get R and T matrix
+  Mat foundamentalMtx = findFundamentalMat(matchedPoint1, matchedPoint2, CV_FM_RANSAC, 3, 0.99);
+  // the camera matrix
+  //  fx   0  cx
+  //  0   fy  cy
+  //  0    0   1
+  Mat K = (Mat_<double>(3,3) << 50, 0, 0,  0,50,0,  0,0,1);
+
+  Mat essentialMtx = K.t() * foundamentalMtx * K; //according to HZ (9.12)
 
   allGoodKeypoints.push_back(matched2);
 
-
-
-
+  // some stats;
+  stringstream strPoints, strMatches, strRatio;
   bool shouldUpdateStat = (index % STAT_UPDTATE_PERIOD == 0);
   if (shouldUpdateStat) {
-    // some stats;
-    stringstream strPoints, strMatches, strRatio;
+    cout << "fundemental matrix:" << foundamentalMtx << endl;
+    cout << "essentialMtx :" << essentialMtx << endl;
+
     strPoints << "Points: " << currentKeypointCount;
     strMatches << "Matches: " << currentMatchCount;
     strRatio << "Ratio: " << currentRatio;
@@ -147,8 +160,7 @@ void Tracker::drawKeypoint(Mat frame, vector<KeyPoint> keypoints) {
 }
 
 void Tracker::drawTail(Mat frame, KeyPoint pt1, KeyPoint pt2) {
-  Scalar lineColor(237, 170, 136);
-  Point p = pt1.pt,
+  Point2f p = pt1.pt,
         q(pt2.pt.x, pt2.pt.y);
   double angle;
   angle = atan2( (double) p.y - q.y, (double) p.x - q.x );
@@ -157,6 +169,6 @@ void Tracker::drawTail(Mat frame, KeyPoint pt1, KeyPoint pt2) {
   q.x = (int) (p.x - 3 * hypotenuse * cos(angle));
   q.y = (int) (p.y - 3 * hypotenuse * sin(angle));
 
-  cv::line(frame, p, q, lineColor, 1, CV_AA, 0 );
+  cv::line(frame, p, q, TailColor, 1, CV_AA, 0 );
 }
 
