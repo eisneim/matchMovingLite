@@ -5,6 +5,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/features2d.hpp>
+#include <math.h> // for sqrt, pow
 
 using namespace std;
 using namespace cv;
@@ -63,6 +64,8 @@ Tracker::~Tracker() {
 Mat Tracker::process(Mat frame, int index) {
   vector<KeyPoint> points;
   Mat descriptors;
+  // draw matches and stats
+  Mat distFrame = frame.clone();
 
   detector -> detectAndCompute(frame, noArray(), points, descriptors);
 
@@ -84,23 +87,31 @@ Mat Tracker::process(Mat frame, int index) {
   // get  matched keypoints in both frame
   for (unsigned ii = 0; ii < matches.size(); ii++) {
     if (matches[ii][0].distance < NN_MATCH_RATIO * matches[ii][1].distance) {
-      matched1.push_back(prevKeypoints[ matches[ii][0].queryIdx ]);
-      matched2.push_back(    points[ matches[ii][0].trainIdx ]);
+      KeyPoint pt1 = prevKeypoints[ matches[ii][0].queryIdx ];
+      KeyPoint pt2 = points[ matches[ii][0].trainIdx ];
+      matched1.push_back(pt1);
+      matched2.push_back(pt2);
+
+      //-- draw out a marker for matched point
+      Scalar markerColor(0, 255, 0);
+      drawMarker(distFrame, pt2.pt, markerColor, MARKER_TILTED_CROSS, 10, 1);
+      drawTail(distFrame, pt1, pt2);
     }
   }
 
   allGoodKeypoints.push_back(matched2);
 
-  // draw matches and stats
-  Mat distFrame = frame.clone();
-  // some stats;
-  stringstream strPoints, strMatches, strRatio;
-  strPoints << "Points: " << currentKeypointCount;
-  strMatches << "Matches: " << currentMatchCount;
-  strRatio << "Ratio: " << currentRatio;
+
+
 
   bool shouldUpdateStat = (index % STAT_UPDTATE_PERIOD == 0);
   if (shouldUpdateStat) {
+    // some stats;
+    stringstream strPoints, strMatches, strRatio;
+    strPoints << "Points: " << currentKeypointCount;
+    strMatches << "Matches: " << currentMatchCount;
+    strRatio << "Ratio: " << currentRatio;
+
     currentKeypointCount = points.size();
     currentMatchCount = (int)matched1.size();
     currentRatio = currentMatchCount * 1.0 / currentKeypointCount;
@@ -117,7 +128,7 @@ Mat Tracker::process(Mat frame, int index) {
   putText(distFrame, strRatio.str(), Point(0, distFrame.rows - 10), FONT_HERSHEY_COMPLEX, 1, Scalar::all(255), 1);
 
 
-  drawKeypoint(distFrame, matched2);
+  // drawKeypoint(distFrame, matched2);
 
   prevKeypoints = points;
   prevFrame = frame;
@@ -135,4 +146,17 @@ void Tracker::drawKeypoint(Mat frame, vector<KeyPoint> keypoints) {
   }
 }
 
+void Tracker::drawTail(Mat frame, KeyPoint pt1, KeyPoint pt2) {
+  Scalar lineColor(237, 170, 136);
+  Point p = pt1.pt,
+        q(pt2.pt.x, pt2.pt.y);
+  double angle;
+  angle = atan2( (double) p.y - q.y, (double) p.x - q.x );
+  double hypotenuse;  hypotenuse = sqrt( pow((p.y - q.y), 2) + pow((p.x - q.x), 2) );
+  /* Here we lengthen the arrow by a factor of three. */
+  q.x = (int) (p.x - 3 * hypotenuse * cos(angle));
+  q.y = (int) (p.y - 3 * hypotenuse * sin(angle));
+
+  cv::line(frame, p, q, lineColor, 1, CV_AA, 0 );
+}
 

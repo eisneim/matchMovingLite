@@ -32,6 +32,8 @@ public:
 
   void drawKeypoint(Mat, vector<KeyPoint>);
 
+  void drawTail(Mat, KeyPoint, KeyPoint);
+
   Ptr<Feature2D> getDetector() const { return detector; };
 };
 

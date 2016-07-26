@@ -4,10 +4,14 @@ set (CMAKE_CXX_STANDARD 14)
 #this is the name of the project
 PROJECT( matchMovingLite )
 
+# add_subdirectory( src )
 
 # this is for recursively searching for other directories
 # add_subdirectory (src)
 
+# ==========================================================================
+#             recursively include all files under src
+# ==========================================================================
 file(GLOB_RECURSE Foo_SOURCES "src/*.cpp")
 file(GLOB_RECURSE Foo_HEADERS "src/*.h")
 
@@ -17,6 +21,7 @@ foreach (_headerFile ${Foo_HEADERS})
     list (APPEND Foo_INCLUDE_DIRS ${_dir})
 endforeach()
 list(REMOVE_DUPLICATES Foo_INCLUDE_DIRS)
+# ==========================================================================
 
 # source to include
 # include_directories(.)
