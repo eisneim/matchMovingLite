@@ -40,7 +40,9 @@ Tracker::Tracker(string _detector, string _matcher) :
   }
 
   if (std::find(MATCHER_TYPES.begin(), MATCHER_TYPES.end(), _matcher) != MATCHER_TYPES.end()) {
-    matcher = DescriptorMatcher::create(_matcher);
+    // matcher = DescriptorMatcher::create(_matcher);
+    matcher = new BFMatcher(NORM_HAMMING); // ( NORM_HAMMING2, crossCheck)
+
   } else {
     string allMachers;
     for_each(
@@ -74,7 +76,7 @@ Mat Tracker::process(Mat frame, int index) {
   if (index == 0) {
     prevKeypoints = points;
     prevFrame = frame;
-    prevDescriptors = descriptors;
+    prevDescriptors = descriptors.clone();
     // this might be unnecessary
     vector<KeyPoint> emptyVect;
     allGoodKeypoints.push_back(emptyVect);
@@ -89,6 +91,7 @@ Mat Tracker::process(Mat frame, int index) {
   matcher -> knnMatch(prevDescriptors, descriptors, matches, 2);
   // get  matched keypoints in both frame
   for (unsigned ii = 0; ii < matches.size(); ii++) {
+
     if (matches[ii][0].distance < NN_MATCH_RATIO * matches[ii][1].distance) {
       KeyPoint pt1 = prevKeypoints[ matches[ii][0].queryIdx ];
       KeyPoint pt2 = points[ matches[ii][0].trainIdx ];
@@ -116,14 +119,14 @@ Mat Tracker::process(Mat frame, int index) {
 
   // some stats;
   stringstream strPoints, strMatches, strRatio;
+  strPoints << "Points: " << currentKeypointCount;
+  strMatches << "Matches: " << currentMatchCount;
+  strRatio << "Ratio: " << currentRatio;
+
   bool shouldUpdateStat = (index % STAT_UPDTATE_PERIOD == 0);
   if (shouldUpdateStat) {
     cout << "fundemental matrix:" << foundamentalMtx << endl;
     cout << "essentialMtx :" << essentialMtx << endl;
-
-    strPoints << "Points: " << currentKeypointCount;
-    strMatches << "Matches: " << currentMatchCount;
-    strRatio << "Ratio: " << currentRatio;
 
     currentKeypointCount = points.size();
     currentMatchCount = (int)matched1.size();
@@ -171,4 +174,50 @@ void Tracker::drawTail(Mat frame, KeyPoint pt1, KeyPoint pt2) {
 
   cv::line(frame, p, q, TailColor, 1, CV_AA, 0 );
 }
+
+
+/**
+ * this is for plane surface features only, since homography transform is only for plane
+ * @param  queryKeypoints        [description]
+ * @param  trainKeypoints        [description]
+ * @param  reprojectionThreshold [description]
+ * @param  matches               [description]
+ * @param  homography            [description]
+ * @return                       [description]
+ */
+bool Tracker::refineMatchesWithHomography(
+  const vector<KeyPoint>& queryKeypoints,
+  const vector<KeyPoint>& trainKeypoints,
+  float reprojectionThreshold,
+  vector<DMatch>& matches,
+  Mat& homography
+) {
+  const int minNumberMatchesAllowed = 8;
+  if (matches.size() < minNumberMatchesAllowed)
+    return false;
+
+  // prepare data for cv::findHomography
+  vector<Point2f> srcPoints(matches.size());
+  vector<Point2f> dstPoints(matches.size());
+
+  for (size_t ii = 0; ii < matches.size(); ii++) {
+    srcPoints.push_back(trainKeypoints[ matches[ ii ].trainIdx ].pt);
+    dstPoints.push_back(queryKeypoints[ matches[ ii ].queryIdx ].pt);
+  }
+
+  // find homography matrix and get inlier matrix
+  vector<unsigned char> inliersMask(srcPoints.size());
+  homography = findHomography(srcPoints, dstPoints, CV_FM_RANSAC, reprojectionThreshold, inliersMask);
+
+  vector<DMatch> inliers;
+  for (size_t ii = 0; ii < inliersMask.size(); ii++) {
+    if (inliersMask[ii]) {
+      inliers.push_back(matches[ii]);
+    }
+  }
+  matches.swap(inliers);
+
+  return matches.size() > minNumberMatchesAllowed;
+}
+
 

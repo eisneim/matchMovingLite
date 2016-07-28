@@ -34,6 +34,13 @@ public:
 
   void drawTail(Mat, KeyPoint, KeyPoint);
 
+  bool refineMatchesWithHomography(const vector<KeyPoint>&,
+    const vector<KeyPoint>&,
+    float,
+    vector<DMatch>&,
+    Mat&
+  );
+
   Ptr<Feature2D> getDetector() const { return detector; };
 };
 
