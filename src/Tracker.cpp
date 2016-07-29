@@ -21,7 +21,7 @@ static const double AKAZE_THRESH = 3e-4;
 // ransac inlier threshold
 static const double RANSAC_THRESH = 2.5f;
 // Nearest-neighbour matching ratio
-static const double NN_MATCH_RATIO = 0.8f;
+static const double NN_MATCH_RATIO = 0.6f;
 // update calc statistics everty 10 frames
 static const int STAT_UPDTATE_PERIOD = 10;
 static const Scalar MarkerColor(255, 169, 135);
