@@ -4,12 +4,14 @@ set (CMAKE_CXX_STANDARD 14)
 
 #this is the name of the project
 PROJECT( matchMovingLite )
+FIND_PACKAGE( OpenCV REQUIRED )
 
 # add_subdirectory( src )
+add_subdirectory("libmm")
+
 
 # this is for recursively searching for other directories
 # add_subdirectory (src)
-
 # ==========================================================================
 #             recursively include all files under src
 # ==========================================================================
@@ -30,9 +32,7 @@ include_directories(${SRC_INCLUDE_DIRS})
 include_directories("libmm")
 
 
-add_subdirectory("libmm")
 
-FIND_PACKAGE( OpenCV REQUIRED )
 ADD_EXECUTABLE( mm main.cpp ${SRC_SOURCES})
 
 TARGET_LINK_LIBRARIES( mm libmmLibrary ${OpenCV_LIBS} )

@@ -19,6 +19,9 @@ MM::~MM() {}
 
 ErrorCode MM::runMatchMoving() {
   cout << "start Match moving";
+
+
+  return OKAY;
 }
 
 } //end of namespace libmm

@@ -1,7 +1,7 @@
 #ifndef MM_COMMON_H
 #define MM_COMMON_H
 
-#include <opencv2/core.hpp>
+#include <opencv2/core/core.hpp>
 #include <map>
 
 namespace libmm {
