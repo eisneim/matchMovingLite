@@ -1,10 +1,10 @@
 
 #include "MM.hpp"
 
-#include <opencv2/highgui.hpp>
+#include <opencv2/core.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/videoio.hpp>
-// #include <opencv2/highgui.hpp>
+#include <opencv2/highgui.hpp>
 #include <iostream>
 
 using namespace std;
@@ -25,7 +25,7 @@ ErrorCode MM::runMatchMoving(string sourcePath, bool isImageSequence) {
     return ERROR;
   }
 
-  VideoCapture sourceVideo(sourcePath);
+  sourceVideo.open(sourcePath);
   if (!sourceVideo.isOpened()) {
     cout << "Couldn't read movie file:" << sourcePath << endl;
     return ERROR;
@@ -38,6 +38,7 @@ ErrorCode MM::runMatchMoving(string sourcePath, bool isImageSequence) {
 
 
   mCameraPoses.resize(frameCount);
+  mImageFeatures.resize(frameCount);
   // mFrames.resize(frameCount);
 
   extractFeatures();
@@ -56,16 +57,20 @@ void MM::initializeIntrinsics(Mat fristFrame) {
 
 void MM::extractFeatures() {
   cout << "----------------- Extract Features -----------------" << endl;
+  Mat currentFrame;
   for (int ii = 0; ii < mCameraPoses.size(); ii++) {
-    Mat frame;
-    sourceVideo >> frame;
+    sourceVideo >> currentFrame;
+
+    if (currentFrame.cols == 0) continue;
     if (ii == 0)
-      initializeIntrinsics(frame);
+       initializeIntrinsics(currentFrame);
+    // cout << "currentFrame cols" << currentFrame.cols << "_rows: " << currentFrame.rows << endl;
 
-    mFrames.push_back(frame);
-    mImageFeatures[ii] = mFeatureUtil.extractFeatures(frame);
-
-    cout << "frame: "<< ii << ": "<< mImageFeatures[ii].keyPoints.size() <<" keyPoints" << endl;
+    // Features newFeature = mFeatureUtil.extractFeatures(currentFrame);
+    // mImageFeatures.push_back(newFeature);
+    // mFrames.push_back(currentFrame);
+    mImageFeatures[ii] = mFeatureUtil.extractFeatures(currentFrame);
+    cout << "currentFrame: "<< ii << ": "<< mImageFeatures[ii].keyPoints.size() <<" keyPoints" << endl;
   }
 
 }

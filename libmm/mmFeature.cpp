@@ -4,6 +4,7 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/calib3d.hpp>
 #include <vector>
+#include <iostream>
 
 using namespace std;
 using namespace cv;
@@ -17,18 +18,19 @@ static const Scalar MarkerColor(255, 169, 135);
 static const Scalar TailColor(0, 255, 0);
 
 MMFeatureUtil::MMFeatureUtil() {
-  Ptr<AKAZE> mDetector = AKAZE::create();
-  mDetector -> setThreshold(AKAZE_THRESH);
-
+  Ptr<AKAZE> akaze = AKAZE::create();
+  akaze -> setThreshold(AKAZE_THRESH);
+  mDetector = akaze;
   // mMatcher = DescriptorMatcher::create("BruteForce-Hamming");
   mMatcher = new BFMatcher(NORM_HAMMING, true);
 }
 
 MMFeatureUtil::~MMFeatureUtil() {};
 
-Features MMFeatureUtil::extractFeatures(Mat& frame) {
+Features MMFeatureUtil::extractFeatures(Mat frame) {
   Features imgFeatures;
   mDetector -> detectAndCompute(frame, noArray(), imgFeatures.keyPoints, imgFeatures.descriptors);
+  cout << "feature detected: " << imgFeatures.keyPoints.size() << endl;
   // convert KeyPoints to points
   KeyPointsToPoints(imgFeatures.keyPoints, imgFeatures.points);
   return imgFeatures;
