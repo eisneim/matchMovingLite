@@ -2,6 +2,8 @@
 #define LIB_MM_H_
 
 #include "mmCommon.hpp"
+#include "mmFeature.hpp"
+#include <opencv2/videoio.hpp>
 #include <vector>
 #include <map>
 #include <set>
@@ -27,13 +29,24 @@ public:
    *
    * @return 0 ok, 1 error
    */
-  ErrorCode runMatchMoving();
+  ErrorCode runMatchMoving(std::string sourcePath, bool isImageSequence = false);
   /**
    * @brief      Saves a result to file.
    */
   void saveResultToFile();
 
 private:
+  cv::VideoCapture sourceVideo;
+  std::vector<cv::Mat>  mFrames;
+  std::vector<Features> mImageFeatures;
+  std::vector<PoseT>    mCameraPoses;
+  std::set<int>         mDoneViews;
+  std::set<int>         mGoodVviews;
+  MatchMtxT             mFeatureMatchMtx;
+  MMFeatureUtil         mFeatureUtil;
+  Intrinsics            mIntrinsics;
+
+  void initializeIntrinsics(cv::Mat);
   /**
    * @brief      create a feature-matching matrix between all frames in working set
    */
@@ -69,14 +82,7 @@ private:
    */
   int mergeNewPointCloud(const PointCloudT& cloud);
 
-  std::vector<cv::Mat>  mFrames;
-  std::vector<Features> mImageFeatures;
-  std::vector<PoseT>    mCameraPose;
-  std::set<int>         mDoneViews;
-  std::set<int>         mGoodVviews;
-  MatchMtxT             mFeatureMatchMtx;
-  // MM2dFeatureUtils      mFeatureUtils;
-  Intrinsics            mIntrinsics;
+
 
 };
 

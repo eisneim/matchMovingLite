@@ -30,8 +30,11 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
+  string videoPath = cliParser.get<string>(0);
+  string outPath = cliParser.get<string>(1);
+
   MM mm;
-  mm.runMatchMoving();
+  mm.runMatchMoving(videoPath);
 
 
   return 0;

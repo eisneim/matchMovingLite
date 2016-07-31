@@ -27,7 +27,7 @@ struct ImagePair {
 
 std::ostream& operator<< (std::ostream& stream, const ImagePair& pair);
 
-typedef std::vector<cv::KeyPoint> KeypointsT;
+typedef std::vector<cv::KeyPoint> KeyPointsT;
 typedef std::vector<cv::Point2f>  Points2fT;
 typedef std::vector<cv::Point3f>  Points3fT;
 
@@ -38,8 +38,8 @@ struct Image2DAnd3D {
 };
 
 struct Features {
-  KeypointsT keyPoints;
-  cv::Point2f    points;
+  KeyPointsT keyPoints;
+  Points2fT    points;
   cv::Mat    descriptors;
 };
 
@@ -61,8 +61,13 @@ typedef std::vector<Point3DFromImgMap> PointCloudT;
 typedef std::vector<Point3DValueRGB> PointCloudRGBT;
 
 typedef cv::Matx34f PoseT;
-
-
+/**
+ * @brief      convert keyPoints to points
+ *
+ * @param[in]  kps   The KeyPoints
+ * @param      ps    points
+ */
+void KeyPointsToPoints(const KeyPointsT& kps, Points2fT& ps);
 
 }// end of namespace
 #endif
