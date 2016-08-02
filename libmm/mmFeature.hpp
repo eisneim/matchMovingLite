@@ -13,9 +13,11 @@ public:
   ~MMFeatureUtil();
 
   Features extractFeatures(cv::Mat frame);
-
+  
+  void drawFeatures(cv::Mat, Features);
+  
   MatchingT matchFeatures(const Features& featuresLeft, const Features& featuresRight);
-
+  
 protected:
   cv::Ptr<cv::DescriptorMatcher> mMatcher;
   cv::Ptr<cv::Feature2D> mDetector;
