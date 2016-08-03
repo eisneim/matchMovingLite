@@ -2,6 +2,8 @@
 #define MM_STEREOUTILS_H_
 
 #include "mmCommon.hpp"
+#include <opencv2/core.hpp>
+
 namespace libmm {
 
   class MMStereoUtils {

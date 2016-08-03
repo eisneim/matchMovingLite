@@ -24,13 +24,13 @@ namespace libmm {
   ErrorCode MM::runMatchMoving(string sourcePath, bool isImageSequence) {
     if (isImageSequence) {
       // @TODO: supoort image sequence.
-      cout << "current implimentation does not support image suquence" << endl;
+      cerr << "current implimentation does not support image suquence" << endl;
       return ERROR;
     }
 
     sourceVideo.open(sourcePath);
     if (!sourceVideo.isOpened()) {
-      cout << "Couldn't read movie file:" << sourcePath << endl;
+      cerr << "Couldn't read movie file:" << sourcePath << endl;
       return ERROR;
     }
 
@@ -116,7 +116,7 @@ namespace libmm {
         double newPercent = floor(current * 10000 / total) / 100.0 ;
         if (newPercent - percent > 1) {
 //          cout.seekp(100);
-          cout << newPercent << "%  ";
+          cout << newPercent << "%  " << flush;
           percent = newPercent;
         }
         
@@ -136,7 +136,13 @@ namespace libmm {
           // not enough points in matching
           matcheIndexMap[1.0] = {ii, jj};
         }
+        int numInliers = MMStereoUtils::findHomographyInliers(
+                                                              mImageFeatures[ii], mImageFeatures[jj], mFeatureMatchMtx[ii][jj]);
+        float inlierRatio = (float)numInliers / (float)(mFeatureMatchMtx[ii][jj].size());
+        matcheIndexMap[inlierRatio] = {ii, jj};
         
+        cout << "homography inlier ratio: " << ii << ","
+             << jj << " " << inlierRatio << endl;
       }
     }
     
@@ -154,15 +160,39 @@ namespace libmm {
     map<float, ImagePair> pairsSortedByRatio = sortViewsByMatch();
     
     for(auto& pair : pairsSortedByRatio) {
+      cout << "trying "<< pair.second << "ratio:" << pair.first << endl << flush;
       size_t leftIndex = pair.second.left;
       size_t rightIndex = pair.second.right;
+      bool success = MMStereoUtils::findCameraMatricesFromMatch(
+          mIntrinsics,
+          mFeatureMatchMtx[leftIndex][rightIndex],
+          mImageFeatures[leftIndex],
+          mImageFeatures[rightIndex],
+          prunedLeft,
+          prunedRight,
+          Pleft,
+          Pright);
+      if (!success) {
+        cerr << "stereo view could not be obtained " << pair.second
+             << " go to next pair" << endl << flush;
+        continue;
+      }
       
+      float poseInliersRatio = (float)prunedLeft.keyPoints.size() / (float)mFeatureMatchMtx[leftIndex][rightIndex].size();
+      cout << "pose inliers ratio" << poseInliersRatio << endl;
+      
+      if (poseInliersRatio < POSE_INLIER_MINIMAL_RATIO) {
+        cerr << "in sufficient pose inliers." << endl;
+        continue;
+      }
+      
+      cout << "------- start the triangulation process from stereo views ----"<< endl;
     }
 
   }
   
   
-  void addMoreViewsToReconstruction() {
+  void MM::addMoreViewsToReconstruction() {
     cout << "should add more view to construct 3d points";
   }
   

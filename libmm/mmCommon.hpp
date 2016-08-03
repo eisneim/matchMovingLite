@@ -70,6 +70,21 @@ namespace libmm {
    * @param      ps    points
    */
   void KeyPointsToPoints(const KeyPointsT& kps, Points2fT& ps);
+  
+  /**
+   * Get the features for left and right images after keeping only the matched features and aligning them.
+   * Alignment: i-th feature in left is a match to i-th feature in right.
+   * @param leftFeatures  Left image features.
+   * @param rightFeatures Right image features.
+   * @param matches       Matching over the features.
+   * @param alignedLeft   Output: aligned left features.
+   * @param alignedRight  Output: aligned right features.
+   */
+  void GetAlignedPointsFromMatch(const Features& leftFeatures,
+                                 const Features& rightFeatures,
+                                 const MatchingT& matches,
+                                 Features& alignedLeft,
+                                 Features& alignedRight);
 
 }// end of namespace
 #endif
