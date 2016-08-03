@@ -65,7 +65,7 @@ private:
    */
   void bundleAdjustmentCurrent();
 
-  std::map<float, ImagePair> sortForBestViews();
+  std::map<float, ImagePair> sortViewsByMatch();
   /**
    * @brief      For all remaining images to process, find the set of 2D points that correlate to 3D points in the current cloud.
    * This is done by scanning the 3D cloud and checking the originating 2D views of each 3D point to see if they
@@ -82,8 +82,8 @@ private:
    */
   int mergeNewPointCloud(const PointCloudT& cloud);
 
-
-
+  void addMoreViewsToReconstruction();
+  
 };
 
 } // end namespace

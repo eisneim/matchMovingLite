@@ -1,5 +1,7 @@
 
 #include "MM.hpp"
+#include "mmStereoUtils.hpp"
+#include "mmBA.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/calib3d.hpp>
@@ -50,7 +52,12 @@ namespace libmm {
     // step 2
     createFeatureMatrix();
     // step 3
-
+    triangulationFromBestPair();
+    // step 4
+    addMoreViewsToReconstruction();
+    
+    saveResultToFile();
+    
     return OKAY;
   }
 
@@ -107,8 +114,9 @@ namespace libmm {
 //             << " size: " << mFeatureMatchMtx[ii][jj].size() << endl;
         
         double newPercent = floor(current * 10000 / total) / 100.0 ;
-        if (newPercent != percent) {
-          cout << "\r" << newPercent << "%";
+        if (newPercent - percent > 1) {
+//          cout.seekp(100);
+          cout << newPercent << "%  ";
           percent = newPercent;
         }
         
@@ -117,8 +125,50 @@ namespace libmm {
     }
   }
   
-  void MM::saveResultToFile() {
+  map<float, ImagePair> MM::sortViewsByMatch() {
+    cout << "------------ created a sorted map ---------";
+    map<float, ImagePair> matcheIndexMap;
 
+    size_t frameCount = mFrames.size();
+    for (size_t ii = 0; ii < frameCount; ii++) {
+      for (size_t jj = ii + 1; jj < frameCount; jj++) {
+        if (mFeatureMatchMtx[ii][jj].size() < 100) {
+          // not enough points in matching
+          matcheIndexMap[1.0] = {ii, jj};
+        }
+        
+      }
+    }
+    
+    return matcheIndexMap;
+  }
+  
+  //Find the best two views for an initial triangulation on the 3D map
+  void MM::triangulationFromBestPair() {
+    cout << "----------- Find best pair for Triangulation ------------" << endl;
+    Matx34f Pleft = Matx34f::eye();
+    Matx34f Pright = Matx34f::eye();
+    Features prunedLeft, prunedRight;
+    PointCloudT pointCloud;
+    
+    map<float, ImagePair> pairsSortedByRatio = sortViewsByMatch();
+    
+    for(auto& pair : pairsSortedByRatio) {
+      size_t leftIndex = pair.second.left;
+      size_t rightIndex = pair.second.right;
+      
+    }
+
+  }
+  
+  
+  void addMoreViewsToReconstruction() {
+    cout << "should add more view to construct 3d points";
+  }
+  
+  
+  void MM::saveResultToFile() {
+    cout << "should save resulat to a file" << endl;
   }
 
 } //end of namespace libmm
