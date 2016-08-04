@@ -2,6 +2,7 @@
 #define MM_COMMON_H
 
 #include <opencv2/core/core.hpp>
+#include <vector>
 #include <map>
 
 namespace libmm {
@@ -84,7 +85,16 @@ namespace libmm {
                                  const Features& rightFeatures,
                                  const MatchingT& matches,
                                  Features& alignedLeft,
-                                 Features& alignedRight);
+                                 Features& alignedRight,
+                                 std::vector<int>& leftBackReference,
+                                 std::vector<int>& rightBackReference);
+  /**
+   * Prune the features according to a binary mask (> 0).
+   * @param features       features to prune
+   * @param mask           mask to prune by
+   * @param pruned pruned features
+   */
+  void PruneFeaturesWithMask(const Features& features, const cv::Mat& mask, Features& pruned);
 
 }// end of namespace
 #endif

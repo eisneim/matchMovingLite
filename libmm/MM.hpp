@@ -45,6 +45,7 @@ private:
   MatchMtxT             mFeatureMatchMtx;
   MMFeatureUtil         mFeatureUtil;
   Intrinsics            mIntrinsics;
+  PointCloudT            mConstructedCloud;
 
   void initializeIntrinsics(cv::Mat);
   /**

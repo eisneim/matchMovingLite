@@ -111,7 +111,7 @@ Mat Tracker::process(Mat frame, int index) {
   //  fx   0  cx
   //  0   fy  cy
   //  0    0   1
-  Mat K = (Mat_<double>(3,3) << 50, 0, 0,  0,50,0,  0,0,1);
+  Mat K = (Mat_<double>(3,3) << 50, 0, 500,  0,50,500,  0,0,1);
 
   Mat essentialMtx = K.t() * foundamentalMtx * K; //according to HZ (9.12)
 

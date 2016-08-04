@@ -18,7 +18,9 @@ namespace libmm {
   const float MERGE_CLOUD_POINT_MIN_DISTANCE = 3.0;
   const float MERGE_CLOUD_FEATURE_MIN_DISTANCE = 20.0;
 
-  MM::MM() {};
+  MM::MM() {
+    cout << "OpenCV version: " << CV_VERSION << endl;
+  };
   MM::~MM() {};
 
   ErrorCode MM::runMatchMoving(string sourcePath, bool isImageSequence) {
@@ -137,7 +139,10 @@ namespace libmm {
           matcheIndexMap[1.0] = {ii, jj};
         }
         int numInliers = MMStereoUtils::findHomographyInliers(
-                                                              mImageFeatures[ii], mImageFeatures[jj], mFeatureMatchMtx[ii][jj]);
+            mImageFeatures[ii],
+            mImageFeatures[jj],
+            mFeatureMatchMtx[ii][jj]);
+        
         float inlierRatio = (float)numInliers / (float)(mFeatureMatchMtx[ii][jj].size());
         matcheIndexMap[inlierRatio] = {ii, jj};
         
@@ -187,6 +192,33 @@ namespace libmm {
       }
       
       cout << "------- start the triangulation process from stereo views ----"<< endl;
+      success = MMStereoUtils::triangulateViews(
+          mIntrinsics,
+          pair.second,
+          mFeatureMatchMtx[leftIndex][rightIndex],
+          mImageFeatures[leftIndex],
+          mImageFeatures[rightIndex],
+          Pleft, Pright,
+          pointCloud
+      );
+      
+      if (!success) {
+        cerr << "could not triangulate: "<< pair.second << endl << flush;
+      }
+      
+      //save current state and do bundle ajustment
+      mConstructedCloud = pointCloud;
+      mCameraPoses[leftIndex] = Pleft;
+      mCameraPoses[rightIndex] = Pright;
+      // std::set::insert
+      mDoneViews.insert(leftIndex);
+      mDoneViews.insert(rightIndex);
+      mGoodVviews.insert(leftIndex);
+      mGoodVviews.insert(rightIndex);
+      
+      bundleAdjustmentCurrent();
+      
+      break;
     }
 
   }
@@ -196,6 +228,9 @@ namespace libmm {
     cout << "should add more view to construct 3d points";
   }
   
+  void MM::bundleAdjustmentCurrent() {
+    cout << "sould do bundleAdjustment for current state";
+  }
   
   void MM::saveResultToFile() {
     cout << "should save resulat to a file" << endl;
