@@ -48,7 +48,7 @@ namespace libmm {
     mCameraPoses.resize(frameCount);
     mImageFeatures.resize(frameCount);
     // mFrames.resize(frameCount);
-    
+
     // step 1
     extractFeatures();
     // step 2
@@ -57,16 +57,16 @@ namespace libmm {
     triangulationFromBestPair();
     // step 4
     addMoreViewsToReconstruction();
-    
+
     saveResultToFile();
-    
+
     return OKAY;
   }
 
   void MM::initializeIntrinsics(Mat fristFrame) {
     cout << "----------------- initialize camera Intrinsics -----------------" << endl;
-    mIntrinsics.K = (Mat_<float>(3,3) << 700, 0, fristFrame.cols / 2,
-                                          0,  700, fristFrame.rows / 2,
+    mIntrinsics.K = (Mat_<float>(3,3) << 50, 0, fristFrame.cols / 2,
+                                          0,  50, fristFrame.rows / 2,
                                           0,   0, 1);
     mIntrinsics.Kinv = mIntrinsics.K.inv();
     mIntrinsics.distortion = Mat_<float>::zeros(1, 4);
@@ -88,13 +88,13 @@ namespace libmm {
     }
 
   }
-  
+
   void MM::createFeatureMatrix() {
     // first we need to update the size of final match matrix
     int frameCount = mCameraPoses.size();
     unsigned total = frameCount * frameCount;
     unsigned current = 0;
-    
+
     mFeatureMatchMtx.resize(frameCount, vector<MatchingT>(frameCount));
     // show Matching info
     Mat frame;
@@ -102,31 +102,31 @@ namespace libmm {
     putText(frame, "Creating Matching Matrix", Point(10, 100), FONT_HERSHEY_COMPLEX, 1,Scalar::all(255), 1);
     imshow(WIN_MAIN, frame);
     waitKey(1);
-    
+
     cout << "Creating Matchin Matrix, total: "<< total << endl;
     double percent;
-    
+
     for (unsigned ii = 0; ii < frameCount; ++ii) {
       for (unsigned jj = 0; jj < frameCount; ++jj) {
         // do the matching
         mFeatureMatchMtx[ ii ][ jj ] =
           mFeatureUtil.matchFeatures(mImageFeatures[ ii ], mImageFeatures[ jj ]);
-        
+
 //        cout << "Match: " << ii << ", " << jj
 //             << " size: " << mFeatureMatchMtx[ii][jj].size() << endl;
-        
+
         double newPercent = floor(current * 10000 / total) / 100.0 ;
         if (newPercent - percent > 1) {
 //          cout.seekp(100);
           cout << newPercent << "%  " << flush;
           percent = newPercent;
         }
-        
+
         current += 1;
       }
     }
   }
-  
+
   map<float, ImagePair> MM::sortViewsByMatch() {
     cout << "------------ created a sorted map ---------";
     map<float, ImagePair> matcheIndexMap;
@@ -142,18 +142,18 @@ namespace libmm {
             mImageFeatures[ii],
             mImageFeatures[jj],
             mFeatureMatchMtx[ii][jj]);
-        
+
         float inlierRatio = (float)numInliers / (float)(mFeatureMatchMtx[ii][jj].size());
         matcheIndexMap[inlierRatio] = {ii, jj};
-        
-        cout << "homography inlier ratio: " << ii << ","
-             << jj << " " << inlierRatio << endl;
+
+        cout << ii << "," << jj
+             << " homography inlier正确率: " << inlierRatio << endl;
       }
     }
-    
+
     return matcheIndexMap;
   }
-  
+
   //Find the best two views for an initial triangulation on the 3D map
   void MM::triangulationFromBestPair() {
     cout << "----------- Find best pair for Triangulation ------------" << endl;
@@ -161,13 +161,14 @@ namespace libmm {
     Matx34f Pright = Matx34f::eye();
     Features prunedLeft, prunedRight;
     PointCloudT pointCloud;
-    
+
     map<float, ImagePair> pairsSortedByRatio = sortViewsByMatch();
-    
-    for(auto& pair : pairsSortedByRatio) {
-      cout << "trying "<< pair.second << "ratio:" << pair.first << endl << flush;
-      size_t leftIndex = pair.second.left;
-      size_t rightIndex = pair.second.right;
+
+    for(auto pair = rbegin(pairsSortedByRatio); pair != rend(pairsSortedByRatio); pair++) {
+    //for(auto& pair : pairsSortedByRatio) {
+      cout << "尝试"<< pair ->second << "帧， 特征正确率: " << pair ->first << endl << flush;
+      size_t leftIndex = pair ->second.left;
+      size_t rightIndex = pair ->second.right;
       bool success = MMStereoUtils::findCameraMatricesFromMatch(
           mIntrinsics,
           mFeatureMatchMtx[leftIndex][rightIndex],
@@ -178,34 +179,34 @@ namespace libmm {
           Pleft,
           Pright);
       if (!success) {
-        cerr << "stereo view could not be obtained " << pair.second
+        cerr << "stereo view could not be obtained " << pair ->second
              << " go to next pair" << endl << flush;
         continue;
       }
-      
+
       float poseInliersRatio = (float)prunedLeft.keyPoints.size() / (float)mFeatureMatchMtx[leftIndex][rightIndex].size();
       cout << "pose inliers ratio" << poseInliersRatio << endl;
-      
+      // the default ratio is 0.5f 至少要超过一半才行
       if (poseInliersRatio < POSE_INLIER_MINIMAL_RATIO) {
         cerr << "in sufficient pose inliers." << endl;
         continue;
       }
-      
+
       cout << "------- start the triangulation process from stereo views ----"<< endl;
       success = MMStereoUtils::triangulateViews(
           mIntrinsics,
-          pair.second,
+          pair ->second,
           mFeatureMatchMtx[leftIndex][rightIndex],
           mImageFeatures[leftIndex],
           mImageFeatures[rightIndex],
           Pleft, Pright,
           pointCloud
       );
-      
+
       if (!success) {
-        cerr << "could not triangulate: "<< pair.second << endl << flush;
+        cerr << "could not triangulate: "<< pair ->second << endl << flush;
       }
-      
+
       //save current state and do bundle ajustment
       mConstructedCloud = pointCloud;
       mCameraPoses[leftIndex] = Pleft;
@@ -215,23 +216,23 @@ namespace libmm {
       mDoneViews.insert(rightIndex);
       mGoodVviews.insert(leftIndex);
       mGoodVviews.insert(rightIndex);
-      
+
       bundleAdjustmentCurrent();
-      
+
       break;
     }
 
   }
-  
-  
+
+
   void MM::addMoreViewsToReconstruction() {
     cout << "should add more view to construct 3d points";
   }
-  
+
   void MM::bundleAdjustmentCurrent() {
     cout << "sould do bundleAdjustment for current state";
   }
-  
+
   void MM::saveResultToFile() {
     cout << "should save resulat to a file" << endl;
   }

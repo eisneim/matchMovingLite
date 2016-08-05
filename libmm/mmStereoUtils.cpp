@@ -35,6 +35,7 @@ namespace libmm {
     if (matches.size() < 4 || homography.empty()) {
       return 0;
     }
+    //cout << "inlierMask: " << inlierMask << endl;
     
     return countNonZero(inlierMask);
   }
@@ -68,6 +69,7 @@ namespace libmm {
     
     Mat E, R, t, mask;
     E = cv::findEssentialMat(alignedLeft.points, alignedRight.points, focal, pp, RANSAC, 0.999, 1.0, mask);
+    cout << "E mask count:" << countNonZero(mask) << endl;
     
     //Find Pright camera matrix from the essential matrix
     //Cheirality check (all points are in front of camera) is performed internally.
@@ -76,16 +78,21 @@ namespace libmm {
     //Generally 4 possible poses exists for a given E. They are [R_1, t], [R_1, -t], [R_2, t], [R_2, -t].
     //By decomposing E, you can only get the direction of the translation, so the function returns unit t.
     
-    cout << "recoverPose inlierCount: " << inliersCount << endl;
     
     Pleft = Matx34f::eye();
     Pright = Matx34f(
        R.at<double>(0,0), R.at<double>(0,1), R.at<double>(0,2), t.at<double>(0),
        R.at<double>(1,0), R.at<double>(1,1), R.at<double>(1,2), t.at<double>(1),
        R.at<double>(2,0), R.at<double>(2,1), R.at<double>(2,2), t.at<double>(2));
-    // populate pruned points
+
+    cout << "Pright:" << Pright << endl;
+    // 保留在mask之内的点，数量和 inlierCount数量应该是一样的
     PruneFeaturesWithMask(alignedLeft, mask, prunedLeft);
     PruneFeaturesWithMask(alignedRight, mask, prunedRight);
+    
+    cout << "recoverPose inlierCount: " << inliersCount << endl;
+    cout << "pruned count: " << prunedLeft.points.size() << ", "
+          << prunedRight.points.size() << endl;
     
     return true;
   }
@@ -122,11 +129,14 @@ namespace libmm {
     
     Mat points3dHomogeneous;
     //The function reconstructs 3-dimensional points (in homogeneous coordinates) by using their observations with a stereo camera. Projections matrices can be obtained from stereoRectify().
-    triangulatePoints(Pleft, Pright, normalizedLeftPts, normalizedRightPts, points3dHomogeneous);
+    //triangulatePoints(Pleft, Pright, normalizedLeftPts, normalizedRightPts, points3dHomogeneous);
+    triangulatePoints(Pleft, Pright, alignedLeft.points, alignedRight.points, points3dHomogeneous);
+    
     
     Mat points3d;
     //The function converts points homogeneous to Euclidean space using perspective projection. That is, each point (x1, x2, ... x(n-1), xn) is converted to (x1/xn, x2/xn, ..., x(n-1)/xn). When xn=0, the output point coordinates will be (0,0,0,...).
-    convertPointsFromHomogeneous(points3dHomogeneous, points3d);
+    convertPointsFromHomogeneous(points3dHomogeneous.t(), points3d);
+    cout << "convertPointsFromHomogeneous points3d:"<< points3d << endl;
     
     Mat rVector, projectedOnLeft, projectedOnRight;
     //Converts a rotation matrix to a rotation vector or vice versa.
